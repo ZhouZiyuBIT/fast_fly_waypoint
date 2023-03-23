@@ -1188,7 +1188,7 @@ class TrackerP():
 
 if __name__ == "__main__":
     
-    quad = QuadrotorModel(BASEPATH+"quad/quad_real.yaml")
+    quad = QuadrotorModel(BASEPATH+"quad/quad_px4.yaml")
     tracker = TrackerPos(quad)
     tracker.define_opt()
     tracker._opt_solver.generate_dependencies("tracker_pos.c")

@@ -10,9 +10,8 @@ import rospy
 from fast_fly_waypoint.msg import TrackTraj
 from px4_bridge.msg import ThrustRates
 from nav_msgs.msg import Odometry
-from nav_msgs.msg import Path
-from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Bool
+from sensor_msgs.msg import Imu
 
 # 
 import os, sys
@@ -21,7 +20,7 @@ sys.path += [BASEPATH]
 
 from quadrotor import QuadrotorModel
 from tracker import TrackerOpt, TrackerOpt2, TrackerPos, TrackerPosVel2, TrackerMPCC, TrackerP, TrackerMPC
-from trajectory import Trajectory
+from trajectory import Trajectory, StateSave
 from gates.gates import Gates
 
 from plotting import plot_gates_2d, plot_traj_xy
@@ -31,7 +30,7 @@ rospy.loginfo("ROS: Hello")
 
 # traj = Trajectory(BASEPATH+"results/res_t_n6.csv")
 traj = Trajectory()
-quad =  QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
+quad =  QuadrotorModel(BASEPATH+'quad/quad_px4.yaml')
 
 tracker = TrackerPos(quad)
 # tracker = TrackerOpt(quad)
@@ -42,6 +41,10 @@ tracker = TrackerPos(quad)
 # tracker.define_opt()
 tracker.load_so(BASEPATH+"generated/tracker_pos.so")
 # tracker.load_so(BASEPATH+"generated/tracker_opt.so")
+
+state_saver = StateSave(BASEPATH+"results/real_flight1.csv")
+
+imu_data = Imu()
 
 ctrl_pub = rospy.Publisher("~thrust_rates", ThrustRates, tcp_nodelay=True, queue_size=1)
 
@@ -54,7 +57,7 @@ r_x = []
 r_y = []
 # last_t = time.time()
 cnt = 0
-time_factor = 1
+time_factor = 0.5
 def odom_cb(msg: Odometry):
     # global last_t 
     # rospy.loginfo(time.time()-last_t)
@@ -98,6 +101,13 @@ def odom_cb(msg: Odometry):
         u.wz = x[12]
         ctrl_pub.publish(u)
 
+        # data save
+        state_saver.log(time.time(), x0, [u.thrust, u.wx, u.wy, u.wz], [imu_data.linear_acceleration.x, imu_data.linear_acceleration.y, imu_data.linear_acceleration.z])
+
+def imu_cb(msg:Imu):
+    global imu_data
+    imu_data = msg
+
 def track_traj_cb(msg: TrackTraj):
     pos = []
     vel = []
@@ -118,6 +128,7 @@ def track_traj_cb(msg: TrackTraj):
     traj.load_data(np.array(pos), np.array(vel), np.array(quat), np.array(angular), np.array(dt))
 
 rospy.Subscriber("~odom", Odometry, odom_cb, queue_size=1, tcp_nodelay=True)
+rospy.Subscriber("~imu", Imu, imu_cb, queue_size=1, tcp_nodelay=True)
 rospy.Subscriber("~track_traj", TrackTraj, track_traj_cb, queue_size=1, tcp_nodelay=True)
 rospy.Subscriber("stop_flag", Bool, stop_cb)
 

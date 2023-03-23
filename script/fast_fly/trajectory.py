@@ -169,7 +169,8 @@ class Trajectory():
 
     def sample(self, n, pos):
         idx = np.argmin(np.linalg.norm(self._pos-pos, axis=1))
-        
+        idx -= 1 #
+
         traj_seg = np.zeros((n, 3))
         traj_v_seg = np.zeros((n, 3))
         traj_dt_seg = np.zeros(n)
@@ -253,6 +254,24 @@ class TrajLog():
         self._traj_writer.writerow(labels)
     def log(self, t, s, u):
         self._traj_writer.writerow([t, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10], s[11], s[12], u[0], u[1], u[2], u[3]])
+
+    def __del__(self):
+        self._fd.close()
+
+class StateSave():
+    def __init__(self, path):
+        self._fd = open(path, 'w')
+        self._state_writer = csv.writer(self._fd, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        labels = ['t',
+                  "p_x", "p_y", "p_z",
+                  "v_x", "v_y", "v_z",
+                  "q_w", "q_x", "q_y", "q_z",
+                  "w_x", "w_y", "w_z",
+                  "u_1", "u_2", "u_3", "u_4",
+                  "a_x", "a_y", "a_z"]
+        self._state_writer.writerow(labels)
+    def log(self, t, s, u, a):
+        self._state_writer.writerow([t, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10], s[11], s[12], u[0], u[1], u[2], u[3], a[0], a[1], a[2]])
 
     def __del__(self):
         self._fd.close()

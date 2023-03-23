@@ -3,6 +3,7 @@
 
     <node pkg="fast_fly_waypoint" name="track" type="track.py" output="screen">
         <remap from="~odom" to="/px4/odom" />
+        <remap from="~imu" to="/px4/imu" />
         <remap from="~track_traj" to="/plan/track_traj" />
     </node>
     <node pkg="fast_fly_waypoint" name="gates_sim" type="gates_sim.py" output="screen"/>
