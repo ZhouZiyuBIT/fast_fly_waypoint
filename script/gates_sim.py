@@ -9,7 +9,7 @@ from visualization_msgs.msg import Marker
 from std_msgs.msg import ColorRGBA
 
 import os, sys
-BASEPATH = os.path.abspath(__file__).split('script', 1)[0]+'script/fast_fly/'
+BASEPATH = os.path.abspath(__file__).split('script/', 1)[0]+'script/fast_fly/'
 sys.path += [BASEPATH]
 
 from gates.gates import Gates

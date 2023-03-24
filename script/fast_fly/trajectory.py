@@ -275,3 +275,34 @@ class StateSave():
 
     def __del__(self):
         self._fd.close()
+
+class StateLoader():
+    def __init__(self, csv_f):
+        if csv_f != None:
+            t = []
+            pos = []
+            vel = []
+            quaternion = []
+            omega = []
+            u = []
+            acc = []
+            self._N = 0
+            with open(csv_f, 'r') as f:
+                traj_reader = csv.DictReader(f)
+                for s in traj_reader:
+                    t.append(float(s['t']))
+                    pos.append([ float(s["p_x"]), float(s["p_y"]), float(s["p_z"]) ])
+                    vel.append([ float(s["v_x"]), float(s["v_y"]), float(s["v_z"])])
+                    quaternion.append([ float(s["q_w"]), float(s["q_x"]), float(s["q_y"]), float(s["q_z"]) ])
+                    omega.append([ float(s["w_x"]), float(s["w_y"]), float(s["w_z"]) ])
+                    u.append([ float(s["u_1"]), float(s["u_2"]), float(s["u_3"]), float(s["u_4"]) ])
+                    acc.append([ float(s["a_x"]), float(s["a_y"]), float(s["a_z"]) ])
+            
+            self._t = np.array(t)
+            self._pos = np.array(pos)
+            self._vel = np.array(vel)
+            self._quaternion = np.array(quaternion)
+            self._omega = np.array(omega)
+            self._u = np.array(u)
+            self._acc = np.array(acc)
+            self._N = self._t.shape[0]
