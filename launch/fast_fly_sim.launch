@@ -5,7 +5,9 @@
         <remap from="~odom" to="/q_sim/odom" />
         <remap from="~track_traj" to="/plan/track_traj" />
     </node>
-    <node pkg="fast_fly_waypoint" name="gates_sim" type="gates_sim.py" output="screen"/>
+    <node pkg="fast_fly_waypoint" name="gates_sim" type="gates_sim.py" output="screen">
+        <remap from="~odom" to="/q_sim/odom" />
+    </node>
     <node pkg="fast_fly_waypoint" name="plan" type="plan.py" output="screen">
         <remap from="~gates" to="/gates_sim/gates" />
     </node>

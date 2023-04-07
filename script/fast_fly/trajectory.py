@@ -183,7 +183,43 @@ class Trajectory():
 
         return traj_seg, traj_v_seg, traj_dt_seg, traj_polynomial_seg
     
-    def sample_dt(self, n, pos, dt=0.1, loop=True):
+    def sample_dt_reset(self):
+        self._sample_time_idx = 0
+        self._sample_time = 0
+    
+    def sample_t(self, time_dt, dt, n, loop=True):
+        self._sample_time += time_dt
+        
+        while self._sample_time - self._dt[self._sample_time_idx]>0:
+            self._sample_time -= self._dt[self._sample_time_idx]
+            self._sample_time_idx += 1
+            if self._sample_time_idx >= self._N:
+                if loop:
+                    self._sample_time_idx = 0
+                else:
+                    self._sample_time_idx = self._N-1
+                    break
+        
+        traj_seg = np.zeros((n, 3))
+        traj_v_seg = np.zeros((n, 3))
+        for i in range(n):
+            s_time = self._sample_time + (i+1)*dt
+            s_idx = self._sample_time_idx
+            while s_time - self._dt[s_idx]>0:
+                s_time -= self._dt[s_idx]
+                s_idx += 1
+                if s_idx >= self._N:
+                    if loop:
+                        s_idx = 0
+                    else:
+                        s_idx = self._N-1
+                        break
+            
+            traj_seg[i,:], traj_v_seg[i,:] = self._seg_pos_vel(self._ploynomials[s_idx], s_time)
+            
+        return traj_seg, traj_v_seg
+    
+    def distance(self, pos):
         idx = np.argmin(np.linalg.norm(self._pos-pos, axis=1))
         if idx == 0:
             idx = 1
@@ -195,30 +231,46 @@ class Trajectory():
         else:
             idx_dt = ddt
         
-
-        traj_seg = np.zeros((n, 3))
-        traj_v_seg = np.zeros((n, 3))
-        for i in range(n):
-            idx_dt = idx_dt+dt
-            while idx_dt-self._dt[idx]>0:
-                if loop:
-                    idx_dt -= self._dt[idx]
-                    idx = (idx+1)%self._N
-                else:
-                    if (idx+1)==self._N:
-                        break
-                    idx_dt -= self._dt[idx]
-                    idx = (idx+1)
-            traj_seg[i,:], traj_v_seg[i,:] = self._seg_pos_vel(self._ploynomials[idx], idx_dt)
+        p, v = self._seg_pos_vel(self._ploynomials[idx], idx_dt)
+        return np.linalg.norm(p-pos)
         
-        return traj_seg, traj_v_seg
+    
+    # def sample_dt(self, time_dt, n, dt=0.1, loop=True):
+    #     idx = np.argmin(np.linalg.norm(self._pos-pos, axis=1))
+    #     if idx == 0:
+    #         idx = 1
+    #     ddt = self._near.solve(self._ploynomials[idx-1], self._ploynomials[idx], self._dt[idx-1], self._dt[idx], pos)
+    #     idx_dt = 0
+    #     if ddt<0:
+    #         idx_dt = self._dt[idx-1]+ddt
+    #         idx = idx-1
+    #     else:
+    #         idx_dt = ddt
+        
+
+    #     traj_seg = np.zeros((n, 3))
+    #     traj_v_seg = np.zeros((n, 3))
+    #     for i in range(n):
+    #         idx_dt = idx_dt+dt
+    #         while idx_dt-self._dt[idx]>0:
+    #             if loop:
+    #                 idx_dt -= self._dt[idx]
+    #                 idx = (idx+1)%self._N
+    #             else:
+    #                 if (idx+1)==self._N:
+    #                     break
+    #                 idx_dt -= self._dt[idx]
+    #                 idx = (idx+1)
+    #         traj_seg[i,:], traj_v_seg[i,:] = self._seg_pos_vel(self._ploynomials[idx], idx_dt)
+        
+    #     return traj_seg, traj_v_seg
     
     def divide_loops(self, pos):
         loop_idx = []
         flag1 = 0
         flag2 = 0
         for i in range(self._N):
-            if np.linalg.norm(self._pos[i]-pos)< 0.5:
+            if np.linalg.norm(self._pos[i]-pos)< 1:
                 if flag1 == 0:
                     l = np.linalg.norm(self._pos[i] - pos)
                     flag1 = 1
@@ -231,15 +283,8 @@ class Trajectory():
             else:
                 flag1 = 0
                 flag2 = 0
-        
-        if len(loop_idx)>1:
-            loops = [self[0:loop_idx[1]]]
-            for i in range(1, len(loop_idx)-1):
-                loops.append(self[loop_idx[i]: loop_idx[i+1]])
-                print(self[loop_idx[i]: loop_idx[i+1]]._pos)
-            return loops
-        else:
-            return [self]
+
+        return loop_idx
 
 class TrajLog():
     def __init__(self, path):

@@ -1,6 +1,9 @@
 import numpy as np
 import casadi as ca
 
+import sys, os
+BASEPATH = os.path.abspath(__file__).split("fast_fly/", 1)[0]+"fast_fly/"
+sys.path += [BASEPATH]
 from quadrotor import QuadrotorModel
 
 # Quaternion Multiplication
@@ -50,23 +53,23 @@ class WayPointOpt():
         else:
             self._X_init = ca.SX.sym('X_init', self._X_dim)
 
-        self._cost_Co = ca.diag([0.001,0.001,0.001,0.001]) # opt param
+        self._cost_Co = ca.diag([0.01,0.01,0.01]) # opt param
         self._cost_WP_p = ca.diag([1,1,1]) # opt param
 
         self._opt_option = {
             # 'verbose': False,
-            'ipopt.tol': 1e-3,
-            # 'ipopt.acceptable_tol': 1e-8,
+            'ipopt.tol': 1e-5,
+            # 'ipopt.acceptable_tol': 1e-3,
             'ipopt.max_iter': 1000,
-            'ipopt.warm_start_init_point': 'yes',
+            # 'ipopt.warm_start_init_point': 'yes',
             'ipopt.print_level': 0,
         }
         self._opt_t_option = {
             'verbose': False,
-            # 'ipopt.tol': 1e-2,
+            'ipopt.tol': 1e-2,
             # 'ipopt.acceptable_tol': 1e-2,
             'ipopt.max_iter': 1000,
-            # 'ipopt.warm_start_init_point': 'yes',
+            'ipopt.warm_start_init_point': 'yes',
             'ipopt.print_level': 0
         }
 
@@ -131,10 +134,12 @@ class WayPointOpt():
                 dd_dyn = self._Xs[:,0]-self._ddynamics( self._X_init, self._Us[:,0], self._DTs[0])
                 self._nlp_g_dyn += [ dd_dyn ]
                 self._nlp_obj_dyn += dd_dyn.T@dd_dyn
+                self._nlp_obj_minco += self._Xs[10:13,0].T@self._cost_Co@self._Xs[10:13,0]
             else:
                 dd_dyn = self._Xs[:,self._N_wp_base[i]]-self._ddynamics( self._Xs[:,self._N_wp_base[i]-1], self._Us[:,self._N_wp_base[i]], self._DTs[i])
                 self._nlp_g_dyn += [ dd_dyn ]
                 self._nlp_obj_dyn += dd_dyn.T@dd_dyn
+                self._nlp_obj_minco += self._Xs[10:13,self._N_wp_base[i]].T@self._cost_Co@self._Xs[10:13,self._N_wp_base[i]]
             
             self._nlp_lbg_dyn += [ -0.0 for _ in range(self._X_dim) ]
             self._nlp_ubg_dyn += [  0.0 for _ in range(self._X_dim) ]
@@ -146,7 +151,7 @@ class WayPointOpt():
             self._nlp_p_dt += [ self._DTs[i] ]
             self._nlp_p_wp_p += [ self._WPs_p[:,i] ]
 
-            self._nlp_obj_minco += (self._Us[:,self._N_wp_base[i]]).T@self._cost_Co@(self._Us[:,self._N_wp_base[i]])
+            # self._nlp_obj_minco += (self._Us[:,self._N_wp_base[i]]).T@self._cost_Co@(self._Us[:,self._N_wp_base[i]])
             self._nlp_obj_time += self._DTs[i]*self._Ns[i]
             self._nlp_obj_wp_p += (self._Xs[:3,self._N_wp_base[i+1]-1]-self._WPs_p[:,i]).T@self._cost_WP_p@(self._Xs[:3,self._N_wp_base[i+1]-1]-self._WPs_p[:,i])
             
@@ -164,11 +169,12 @@ class WayPointOpt():
                 self._nlp_lbg_dyn += [ -0.0 for _ in range(self._X_dim) ]
                 self._nlp_ubg_dyn += [  0.0 for _ in range(self._X_dim) ]
 
-                self._nlp_obj_minco += (self._Us[:,self._N_wp_base[i]+j]).T@self._cost_Co@(self._Us[:,self._N_wp_base[i]+j])
+                # self._nlp_obj_minco += (self._Us[:,self._N_wp_base[i]+j]).T@self._cost_Co@(self._Us[:,self._N_wp_base[i]+j])
+                self._nlp_obj_minco += self._Xs[10:13,self._N_wp_base[i]+j].T@self._cost_Co@self._Xs[10:13,self._N_wp_base[i]+j]
 
     def define_opt(self):
         nlp_dect = {
-            'f': self._nlp_obj_dyn + self._nlp_obj_wp_p + self._nlp_obj_minco,
+            'f': 1*self._nlp_obj_dyn + self._nlp_obj_wp_p + 1*self._nlp_obj_minco,
             'x': ca.vertcat(*(self._nlp_x_x+self._nlp_x_u)),
             'p': ca.vertcat(*(self._nlp_p_xinit+self._nlp_p_wp_p+self._nlp_p_dt)),
             # 'g': ca.vertcat(*(self._nlp_g_dyn)),
@@ -213,7 +219,9 @@ class WayPointOpt():
             'g': ca.vertcat(*(self._nlp_g_dyn+self._nlp_g_wp_p)),
         }
         self._opt_t_solver = ca.nlpsol('opt_t', 'ipopt', nlp_dect, self._opt_t_option)
-
+        self._lam_x0 = np.zeros(self._opt_t_solver.size_in(6)[0])
+        self._lam_g0 = np.zeros(self._opt_t_solver.size_in(7)[0])
+        
     def solve_opt_t(self, xinit, wp_p):
         if self._loop:
             p = np.zeros(3*self._wp_num)
@@ -224,6 +232,8 @@ class WayPointOpt():
             p[self._X_dim:self._X_dim+3*self._wp_num] = wp_p
         res = self._opt_t_solver(
             x0=self._xut0,
+            lam_x0 = self._lam_x0,
+            lam_g0 = self._lam_g0,
             lbx=(self._nlp_lbx_x+self._nlp_lbx_u+self._nlp_lbx_t),
             ubx=(self._nlp_ubx_x+self._nlp_ubx_u+self._nlp_ubx_t),
             lbg=(self._nlp_lbg_dyn+self._nlp_lbg_wp_p),
@@ -231,6 +241,8 @@ class WayPointOpt():
             p=p
         )
         self._xut0 = res['x'].full().flatten()
+        self._lam_x0 = res["lam_x"]
+        self._lam_g0 = res["lam_g"]
         return res
 
 import csv
@@ -263,9 +275,12 @@ def save_traj(res, opt: WayPointOpt, csv_f):
                 traj_writer.writerow([t, s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8], s[9], s[10], s[11], s[12], u[0], u[1], u[2], u[3]])
 
 from gates.gates import Gates
-def cal_Ns(gates:Gates, l_per_n:float):
+def cal_Ns(gates:Gates, l_per_n:float, loop:bool, init_pos=[0,0,0]):
+    if loop:
+        init_pos = gates._pos[-1]
+    
     Ns = []
-    l = np.linalg.norm(np.array(gates._pos[0])-np.array(gates._pos[-1]))
+    l = np.linalg.norm(np.array(gates._pos[0])-np.array(init_pos))
     Ns.append(int(l/l_per_n))
 
     for i in range(gates._N-1):
@@ -275,25 +290,23 @@ def cal_Ns(gates:Gates, l_per_n:float):
     return Ns
 
 def optimation(nx, quad):
-    gate = Gates("./gates/gates_"+nx+".yaml")
+    gate = Gates(BASEPATH+"gates/gates_"+nx+".yaml")
 
     dts = np.array([0.2]*gate._N)
     
-    # quad = QuadrotorModel('quad.yaml')
-    
-    Ns = cal_Ns(gate, 0.4)
+    Ns = cal_Ns(gate, 0.4, loop=True)
     wp_opt = WayPointOpt(quad, gate._N, Ns, loop=True)
     wp_opt.define_opt()
     wp_opt.define_opt_t()
     
     print("\n\nWarm-up start ......\n")
-    res = wp_opt.solve_opt([], gate._pos.flatten(), dts)
+    res = wp_opt.solve_opt([], np.array(gate._pos).flatten(), dts)
     print("\n\nTime optimization start ......\n")
-    res_t = wp_opt.solve_opt_t([], gate._pos.flatten())
-    save_traj(res, wp_opt, "./results/res_"+nx+".csv")
-    save_traj(res_t, wp_opt, "./results/res_t_"+nx+".csv")
+    res_t = wp_opt.solve_opt_t([], np.array(gate._pos).flatten())
+    save_traj(res, wp_opt, BASEPATH+"results/res_"+nx+".csv")
+    save_traj(res_t, wp_opt, BASEPATH+"results/res_t_"+nx+".csv")
 
 if __name__ == "__main__":    
-    quad = QuadrotorModel('./quad/quad.yaml')
+    quad = QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
     
     optimation("n8", quad)

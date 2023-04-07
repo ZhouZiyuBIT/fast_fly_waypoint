@@ -19,30 +19,23 @@ BASEPATH = os.path.abspath(__file__).split('script', 1)[0]+'script/fast_fly/'
 sys.path += [BASEPATH]
 
 from quadrotor import QuadrotorModel
-from tracker import TrackerOpt, TrackerOpt2, TrackerPos, TrackerPosVel2, TrackerMPCC, TrackerP, TrackerMPC
+from tracker import TrackerPos
 from trajectory import Trajectory, StateSave
 from gates.gates import Gates
-
-from plotting import plot_gates_2d, plot_traj_xy
 
 rospy.init_node("track")
 rospy.loginfo("ROS: Hello")
 
-# traj = Trajectory(BASEPATH+"results/res_t_n6.csv")
 traj = Trajectory()
-quad =  QuadrotorModel(BASEPATH+'quad/quad_px4.yaml')
+quad =  QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
 
 tracker = TrackerPos(quad)
-# tracker = TrackerOpt(quad)
-# tracker = TrackerMPCC(quad)
-# tracker = TrackerP(quad)
-# tracker = TrackerMPC(quad)
 
 # tracker.define_opt()
 tracker.load_so(BASEPATH+"generated/tracker_pos.so")
-# tracker.load_so(BASEPATH+"generated/tracker_opt.so")
 
-state_saver = StateSave(BASEPATH+"results/real_flight1.csv")
+
+state_saver = StateSave(BASEPATH+"results/real_flight123.csv")
 
 imu_data = Imu()
 

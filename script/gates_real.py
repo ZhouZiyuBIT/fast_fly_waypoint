@@ -23,8 +23,7 @@ gates_pub = rospy.Publisher("~gates", TrackTraj, tcp_nodelay=True, queue_size=1)
 gates_marker_pub = rospy.Publisher("/plan/gates_marker", Marker, queue_size=1)
 
 gates = Gates(BASEPATH+"gates/gates_real.yaml")
-
-d_gate = [-6.8,0.45,-1.33]
+dyn_gate_id = 5
 
 def timer_cb(event):
     gates_traj = TrackTraj()
@@ -56,17 +55,18 @@ def timer_cb(event):
     gates_pub.publish(gates_traj)
     gates_marker_pub.publish(gates_marker)
 
-def odom_cb(msg: Odometry):
-    pos = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z])
-    g_pos = np.array(gates._pos[5])
-    if np.linalg.norm(pos-g_pos) < 0.3:
-        mov = np.random.normal(-0.5, 0.5, 3)
-        gates._pos[5][0] = d_gate[0]+mov[0]
-        gates._pos[5][1] = d_gate[1]+mov[1]
-        gates._pos[5][2] = d_gate[2]+mov[2]
+def dyn_gate_cb(msg: Point):
+    p_now = np.array([msg.x, msg.y, msg.z])
+    p = np.array(gates._pos[dyn_gate_id-1])
+    if np.linalg.norm(p_now - p) > 0.1:
+        gates._pos[dyn_gate_id-1][0] = p_now[0]
+        gates._pos[dyn_gate_id-1][1] = p_now[1]
+        gates._pos[dyn_gate_id-1][2] = p_now[2]
+    pass
     
-rospy.Timer(rospy.Duration(0.1), timer_cb)
-rospy.Subscriber("~odom", Odometry, odom_cb, queue_size=1, tcp_nodelay=True)
+rospy.Timer(rospy.Duration(0.01), timer_cb)
+
+rospy.Subscriber("/dynamic_gate", Point, dyn_gate_cb, queue_size=1, tcp_nodelay=True)
 
 rospy.spin()
 rospy.loginfo("ROS: Byby")
