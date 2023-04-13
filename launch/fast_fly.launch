@@ -6,9 +6,9 @@
         <remap from="~imu" to="/px4/imu" />
         <remap from="~track_traj" to="/plan/track_traj" />
     </node>
-    <node pkg="fast_fly_waypoint" name="gates_sim" type="gates_sim.py" output="screen"/>
+    <node pkg="fast_fly_waypoint" name="gates_real" type="gates_real.py" output="screen"/>
     <node pkg="fast_fly_waypoint" name="plan" type="plan.py" output="screen">
-        <remap from="~gates" to="/gates_sim/gates" />
+        <remap from="~gates" to="/gates_real/gates" />
     </node>
 
     <node pkg="px4_bridge" name="px4" type="px4_bridge_node" output="screen">

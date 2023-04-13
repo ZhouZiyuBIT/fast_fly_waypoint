@@ -309,4 +309,4 @@ def optimation(nx, quad):
 if __name__ == "__main__":    
     quad = QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
     
-    optimation("n8", quad)
+    optimation("real", quad)

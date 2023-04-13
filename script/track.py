@@ -34,8 +34,8 @@ tracker = TrackerPos(quad)
 # tracker.define_opt()
 tracker.load_so(BASEPATH+"generated/tracker_pos.so")
 
-
-state_saver = StateSave(BASEPATH+"results/real_flight123.csv")
+run_time_log = time.strftime("%Y-%m-%d_%X", time.localtime())
+state_saver = StateSave(BASEPATH+"results/real_flight"+run_time_log+".csv")
 
 imu_data = Imu()
 
@@ -50,7 +50,7 @@ r_x = []
 r_y = []
 # last_t = time.time()
 cnt = 0
-time_factor = 1.0
+time_factor = 1
 def odom_cb(msg: Odometry):
     # global last_t 
     # rospy.loginfo(time.time()-last_t)
@@ -102,6 +102,8 @@ def imu_cb(msg:Imu):
     imu_data = msg
 
 def track_traj_cb(msg: TrackTraj):
+    global traj
+    traj_tmp = Trajectory()
     pos = []
     vel = []
     quat = []
@@ -118,7 +120,8 @@ def track_traj_cb(msg: TrackTraj):
     quat.append([msg.orientation[-1].w, msg.orientation[-1].x, msg.orientation[-1].y, msg.orientation[-1].z])
     angular.append([msg.angular[-1].x, msg.angular[-1].y, msg.angular[-1].z])
 
-    traj.load_data(np.array(pos), np.array(vel), np.array(quat), np.array(angular), np.array(dt))
+    traj_tmp.load_data(np.array(pos), np.array(vel), np.array(quat), np.array(angular), np.array(dt))
+    traj = traj_tmp
 
 rospy.Subscriber("~odom", Odometry, odom_cb, queue_size=1, tcp_nodelay=True)
 rospy.Subscriber("~imu", Imu, imu_cb, queue_size=1, tcp_nodelay=True)

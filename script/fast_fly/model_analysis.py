@@ -13,21 +13,23 @@ from trajectory import StateLoader
 from lpf import fft_filter
 
 
-state_ld = StateLoader(BASEPATH+"results/real_flight1.csv")
+state_ld = StateLoader(BASEPATH+"results/real_flight0.5.csv")
 
 print("length",state_ld._N)
+# analysis_window = [0, state_ld._N]
+analysis_window = [5000, 9000]
 
-velocity = state_ld._vel[6000:12000]
+velocity = state_ld._vel[analysis_window[0]:analysis_window[1]]
 velocity_rate = np.linalg.norm(velocity, axis=1)
-acceleration = state_ld._acc[6000:12000]
-quaternion = state_ld._quaternion[6000:12000]
-thrust = state_ld._u[6000:12000,0]
-angular_rate_set = state_ld._u[6000:12000,1:4]
-angular_rate = state_ld._omega[6000:12000]
+acceleration = state_ld._acc[analysis_window[0]:analysis_window[1]]
+quaternion = state_ld._quaternion[analysis_window[0]:analysis_window[1]]
+thrust = state_ld._u[analysis_window[0]:analysis_window[1],0]
+angular_rate_set = state_ld._u[analysis_window[0]:analysis_window[1],1:4]
+angular_rate = state_ld._omega[analysis_window[0]:analysis_window[1]]
 
 # transform to body frame
 velocity_body = []
-for i in range(6000):
+for i in range(analysis_window[1]-analysis_window[0]):
     q = [-quaternion[i,1], -quaternion[i,2], -quaternion[i,3], quaternion[i,0]]
     R = spt.Rotation.from_quat(q).as_matrix()
     velocity_body.append(np.dot(R, velocity[i]))
