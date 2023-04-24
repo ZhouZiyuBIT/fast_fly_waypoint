@@ -7,7 +7,7 @@ from trajectory import Trajectory
 from gates.gates import Gates
 
 traj_topt = Trajectory(BASEPATH+"results/res_t_real.csv")
-traj_track = Trajectory(BASEPATH+"results/real_flight0.5.csv")
+traj_track = Trajectory(BASEPATH+"results/real_flight2023-04-23_15:42-1.0.csv")
 # traj_track_mpc = Trajectory(BASEPATH+"results/sim_flight_mpc.csv")
 gates = Gates(BASEPATH+"gates/gates_real.yaml")
 
@@ -24,9 +24,9 @@ d_err = np.array(d_err)
 # d_err_mpc = np.array(d_err_mpc)
 
 plt.figure()
-plt.plot(traj_topt._pos[:,0], traj_topt._pos[:,1], 'r')
-plt.plot(traj_track._pos[:,0], traj_track._pos[:,1], 'g')
-# plt.plot(traj_topt._vel[:,3], 'r')
+# plt.plot(traj_topt._pos[:,0], traj_topt._pos[:,1], 'r')
+# plt.plot(traj_track._pos[:,0], traj_track._pos[:,1], 'g')
+plt.plot(traj_track._vel[:,3], 'r')
 # plt.plot(d_err)
 # plt.plot(d_err_mpc)
 plt.show()

@@ -23,7 +23,7 @@ gates_pub = rospy.Publisher("~gates", TrackTraj, tcp_nodelay=True, queue_size=1)
 gates_marker_pub = rospy.Publisher("/plan/gates_marker", Marker, queue_size=1)
 
 gates = Gates(BASEPATH+"gates/gates_real.yaml")
-dyn_gate_id = 3
+dyn_gate_id = 4
 
 def timer_cb(event):
     gates_traj = TrackTraj()
@@ -56,12 +56,12 @@ def timer_cb(event):
     gates_marker_pub.publish(gates_marker)
 
 def dyn_gate_cb(msg: Point):
-    # p_now = np.array([msg.x, msg.y, msg.z])
-    # p = np.array(gates._pos[dyn_gate_id-1])
-    # if np.linalg.norm(p_now - p) > 0.1:
-    #     gates._pos[dyn_gate_id-1][0] = p_now[0]
-    #     gates._pos[dyn_gate_id-1][1] = p_now[1]
-    #     gates._pos[dyn_gate_id-1][2] = p_now[2]+0.5
+    p_now = np.array([msg.x, msg.y, msg.z])
+    p = np.array(gates._pos[dyn_gate_id-1])
+    if np.linalg.norm(p_now - p) > 0.1:
+        gates._pos[dyn_gate_id-1][0] = p_now[0]
+        gates._pos[dyn_gate_id-1][1] = p_now[1]
+        gates._pos[dyn_gate_id-1][2] = p_now[2]+0.5
     pass
     
 rospy.Timer(rospy.Duration(0.01), timer_cb)

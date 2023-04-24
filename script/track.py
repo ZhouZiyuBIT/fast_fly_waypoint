@@ -50,7 +50,7 @@ r_x = []
 r_y = []
 # last_t = time.time()
 cnt = 0
-time_factor = 1
+time_factor = 1.0
 def odom_cb(msg: Odometry):
     # global last_t 
     # rospy.loginfo(time.time()-last_t)

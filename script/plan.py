@@ -27,7 +27,7 @@ gate = Gates(BASEPATH+"gates/gates_real.yaml")
 
 
 quad = QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
-Ns = cal_Ns(gate, 0.4, loop=True)
+Ns = cal_Ns(gate, 0.3, loop=True)
 dts = np.array([0.2]*gate._N)
 wp_opt = WayPointOpt(quad, gate._N, Ns, loop=True)
 wp_opt.define_opt()

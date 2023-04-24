@@ -13,11 +13,11 @@ from trajectory import StateLoader
 from lpf import fft_filter
 
 
-state_ld = StateLoader(BASEPATH+"results/real_flight0.5.csv")
+state_ld = StateLoader(BASEPATH+"results/real_flight2023-04-23_18:46:29.csv")
 
 print("length",state_ld._N)
-# analysis_window = [0, state_ld._N]
-analysis_window = [5000, 9000]
+analysis_window = [0, state_ld._N]
+# analysis_window = [5000, 8500]
 
 velocity = state_ld._vel[analysis_window[0]:analysis_window[1]]
 velocity_rate = np.linalg.norm(velocity, axis=1)
@@ -27,6 +27,8 @@ thrust = state_ld._u[analysis_window[0]:analysis_window[1],0]
 angular_rate_set = state_ld._u[analysis_window[0]:analysis_window[1],1:4]
 angular_rate = state_ld._omega[analysis_window[0]:analysis_window[1]]
 
+# plt.plot(state_ld._pos[:,0], 'r.')
+# plt.show()
 # transform to body frame
 velocity_body = []
 for i in range(analysis_window[1]-analysis_window[0]):
