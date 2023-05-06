@@ -17,6 +17,7 @@ from trajectory import Trajectory
 def plot_gates_3d(axes:plt.Axes, gates:Gates):
     for idx in range(gates._N):
         axes.plot(gates._shapes[idx][0], gates._shapes[idx][1], gates._shapes[idx][2], linewidth=3, color="dimgray")
+        axes.plot(gates._pos[idx][0], gates._pos[idx][1], gates._pos[idx][2], marker="*", markersize=3, color="red")
 
 def plot_gates_2d(axes:plt.Axes, gates:Gates):
     for idx in range(gates._N):
@@ -25,8 +26,8 @@ def plot_gates_2d(axes:plt.Axes, gates:Gates):
 def plot_traj_xy(axes:plt.Axes, traj:Trajectory, linewidth=1, linestyle="-", label="", color=None, alpha=1):
     axes.plot(traj._pos[:,0], traj._pos[:,1], linewidth=linewidth, linestyle=linestyle, color=color, alpha=alpha, label=label)
 
-def plot_traj_3d(axes3d, gates:Gates):
-    axes3d.plot(gates._pos[:,0], gates._pos[:,1], gates._pos[:,2])
+def plot_traj_3d(axes3d, traj:Trajectory, linewidth=1, linestyle="-", label="", color=None, alpha=1):
+    axes3d.plot(traj._pos[:,0], traj._pos[:,1], traj._pos[:,2], linewidth=linewidth, linestyle=linestyle, color=color, alpha=alpha, label=label)
 
 # plot
 def plot_tracked(gates:Gates, traj_planned:Trajectory, traj_tracked:Trajectory):
@@ -71,6 +72,7 @@ def plot_track_cmp(gates:Gates, traj_planned:Trajectory, traj_track:Trajectory, 
     ax.set_ylim([-10, 10])
     ax.set_xlabel("X [m]", labelpad=0)
     ax.set_ylabel("Y [m]", labelpad=-5)
+    ax.grid(True)
 
     ax.set_aspect("equal")
 
@@ -78,8 +80,8 @@ def plot_track_cmp(gates:Gates, traj_planned:Trajectory, traj_track:Trajectory, 
     
     ax.scatter(traj_track._pos[0,0], traj_track._pos[0,1], marker="*")
     plot_traj_xy(ax, traj_track_mpc, linewidth=1, linestyle="-", label="Traj: Track MPC")
-    plot_traj_xy(ax, traj_track, linewidth=1, linestyle="-", label="Traj: Track")
-    plot_traj_xy(ax, traj_planned, linewidth=2, linestyle="--", label="Traj: Planned")
+    plot_traj_xy(ax, traj_track, linewidth=1, linestyle="-", label="Traj: Track tMPC")
+    plot_traj_xy(ax, traj_planned, linewidth=1, linestyle="--", label="Traj: Planned")
     
     # inset axes....
     axins = ax.inset_axes([0.56, 0.22, 0.28, 0.28])
@@ -148,7 +150,7 @@ def plot_track_vel(gates:Gates, traj_planned:Trajectory, traj_tracked:Trajectory
     # fig.colorbar(line1, cax=cax1, label='Velocity [m/s]')
     divider2 = make_axes_locatable(ax2)
     cax2 = divider2.append_axes("right", size="5%", pad="10%")
-    fig.colorbar(line2, cax=cax2, label='Velocity [m/s]', ticks=[2.5, 5.0, 7.5, 10.0, 12.5])
+    fig.colorbar(line2, cax=cax2, label='Velocity: tMPC [m/s]', ticks=[2.5, 5.0, 7.5, 10.0, 12.5])
     fig.legend(ncol=2, loc="upper center")
     
     ax3 = fig.add_subplot(223)
@@ -196,7 +198,7 @@ def plot_track_vel(gates:Gates, traj_planned:Trajectory, traj_tracked:Trajectory
     # fig.colorbar(line1, cax=cax1, label='Velocity [m/s]')
     divider2 = make_axes_locatable(ax4)
     cax2 = divider2.append_axes("right", size="5%", pad="10%")
-    fig.colorbar(line2, cax=cax2, label='MPC: Velocity [m/s]', ticks=[2.5, 5.0, 7.5, 10.0, 12.5])
+    fig.colorbar(line2, cax=cax2, label='Velocity: MPC [m/s]', ticks=[2.5, 5.0, 7.5, 10.0, 12.5])
 
     
     fig.tight_layout(pad=0, rect=[0.1, 0.03, 0.9, 0.9])

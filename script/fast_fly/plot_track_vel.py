@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 import os, sys
 BASEPATH = os.path.abspath(__file__).split("fast_fly/", 1)[0]+"fast_fly/"

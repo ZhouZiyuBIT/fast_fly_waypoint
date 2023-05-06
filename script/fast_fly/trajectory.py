@@ -79,6 +79,8 @@ class Trajectory():
             omega = []
             self._N = 0
             ploynomials = []
+            u = []
+            acc = []
             with open(csv_f, 'r') as f:
                 traj_reader = csv.DictReader(f)
                 for s in traj_reader:
@@ -87,12 +89,19 @@ class Trajectory():
                     vel.append([ float(s["v_x"]), float(s["v_y"]), float(s["v_z"]), np.sqrt(float(s["v_x"])*float(s["v_x"])+float(s["v_y"])*float(s["v_y"])+float(s["v_z"])*float(s["v_z"])) ])
                     quaternion.append([ float(s["q_w"]), float(s["q_x"]), float(s["q_y"]), float(s["q_z"]) ])
                     omega.append([ float(s["w_x"]), float(s["w_y"]), float(s["w_z"]) ])
+                    if "u_1" in s.keys():
+                        u.append([float(s["u_1"]), float(s["u_2"]), float(s["u_3"]), float(s["u_4"])])
+                    if "a_x" in s.keys():
+                        acc.append([float(s["a_x"]), float(s["a_y"]), float(s["a_z"])])
             
             self._t = np.array(t)
             self._pos = np.array(pos)
             self._vel = np.array(vel)
             self._quaternion = np.array(quaternion)
             self._omega = np.array(omega)
+            self._u = np.array(u)
+            self._acc = np.array(acc)
+                
             self._N = self._t.shape[0]-1
             assert(self._N>0)
             self._dt = self._t[1:]-self._t[:-1]
@@ -107,6 +116,8 @@ class Trajectory():
             self._vel = np.array([])
             self._quaternion = np.array([])
             self._omega = np.array([])
+            self._u = np.array([])
+            self._acc = np.array([])
             self._N = 0
             self._dt = np.array([])
             self._ploynomials = np.array([])
@@ -143,9 +154,13 @@ class Trajectory():
         traj._vel = self._vel[idx]
         traj._quaternion = self._quaternion[idx]
         traj._omega = self._omega[idx]
-        traj._dt = self._dt[idx]
+        traj._dt = traj._t[1:] - traj._t[:-1]
         traj._ploynomials = self._ploynomials[idx]
-        self._N = traj._t.shape[0]-1
+        if self._u.shape[0]!=0:
+            traj._u = self._u[idx]
+        if self._acc.shape[0]!=0:
+            traj._acc = self._acc[idx]
+        traj._N = traj._t.shape[0]-1
         return traj
 
     def _ploynomial(self, p1, p2, v1, v2, dt):

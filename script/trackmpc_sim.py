@@ -65,10 +65,10 @@ def odom_cb(msg: Odometry):
         traj.sample_dt_reset()
         last_t = time.time()
     cnt += 1
-    if time_factor<0.95:
+    if time_factor<0.96:
         time_factor += 0.001
     else:
-        time_factor = 0.95
+        time_factor = 0.96
     if traj._N != 0:
         print("track:", cnt)
         x0 = np.array([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z,

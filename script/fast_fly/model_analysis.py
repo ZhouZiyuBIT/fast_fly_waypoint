@@ -13,7 +13,7 @@ from trajectory import StateLoader
 from lpf import fft_filter
 
 
-state_ld = StateLoader(BASEPATH+"results/real_flight2023-04-23_18:46:29.csv")
+state_ld = StateLoader(BASEPATH+"results/real_flight2023-04-23_15:42-1.0.csv")
 
 print("length",state_ld._N)
 analysis_window = [0, state_ld._N]

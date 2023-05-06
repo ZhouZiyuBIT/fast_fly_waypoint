@@ -66,10 +66,22 @@ class WayPointOpt():
         }
         self._opt_t_option = {
             'verbose': False,
-            'ipopt.tol': 1e-2,
+            # 'ipopt.tol': 1e-2,
+            # 'ipopt.acceptable_tol': 1e-2,
+            'ipopt.max_iter': 1000,
+            'ipopt.print_level': 0
+        }
+        self._opt_t_warm_option = {
+            'verbose': False,
+            # 'ipopt.tol': 1e-2,
             # 'ipopt.acceptable_tol': 1e-2,
             'ipopt.max_iter': 1000,
             'ipopt.warm_start_init_point': 'yes',
+            'ipopt.warm_start_bound_frac': 1e-6,
+            'ipopt.warm_start_bound_push': 1e-6,
+            'ipopt.warm_start_mult_bound_push': 1e-6,
+            'ipopt.warm_start_slack_bound_frac': 1e-6,
+            'ipopt.warm_start_slack_bound_push': 1e-6,
             'ipopt.print_level': 0
         }
 
@@ -219,10 +231,11 @@ class WayPointOpt():
             'g': ca.vertcat(*(self._nlp_g_dyn+self._nlp_g_wp_p)),
         }
         self._opt_t_solver = ca.nlpsol('opt_t', 'ipopt', nlp_dect, self._opt_t_option)
+        self._opt_t_solver_warm = ca.nlpsol('opt_t', 'ipopt', nlp_dect, self._opt_t_warm_option)
         self._lam_x0 = np.zeros(self._opt_t_solver.size_in(6)[0])
         self._lam_g0 = np.zeros(self._opt_t_solver.size_in(7)[0])
         
-    def solve_opt_t(self, xinit, wp_p):
+    def solve_opt_t(self, xinit, wp_p, warm=False):
         if self._loop:
             p = np.zeros(3*self._wp_num)
             p = wp_p
@@ -230,16 +243,28 @@ class WayPointOpt():
             p = np.zeros(self._X_dim+3*self._wp_num)
             p[:self._X_dim] = xinit
             p[self._X_dim:self._X_dim+3*self._wp_num] = wp_p
-        res = self._opt_t_solver(
-            x0=self._xut0,
-            lam_x0 = self._lam_x0,
-            lam_g0 = self._lam_g0,
-            lbx=(self._nlp_lbx_x+self._nlp_lbx_u+self._nlp_lbx_t),
-            ubx=(self._nlp_ubx_x+self._nlp_ubx_u+self._nlp_ubx_t),
-            lbg=(self._nlp_lbg_dyn+self._nlp_lbg_wp_p),
-            ubg=(self._nlp_ubg_dyn+self._nlp_ubg_wp_p),
-            p=p
-        )
+        if warm:
+            res = self._opt_t_solver_warm(
+                x0=self._xut0,
+                lam_x0 = self._lam_x0,
+                lam_g0 = self._lam_g0,
+                lbx=(self._nlp_lbx_x+self._nlp_lbx_u+self._nlp_lbx_t),
+                ubx=(self._nlp_ubx_x+self._nlp_ubx_u+self._nlp_ubx_t),
+                lbg=(self._nlp_lbg_dyn+self._nlp_lbg_wp_p),
+                ubg=(self._nlp_ubg_dyn+self._nlp_ubg_wp_p),
+                p=p
+            )
+        else:    
+            res = self._opt_t_solver(
+                x0=self._xut0,
+                lam_x0 = self._lam_x0,
+                lam_g0 = self._lam_g0,
+                lbx=(self._nlp_lbx_x+self._nlp_lbx_u+self._nlp_lbx_t),
+                ubx=(self._nlp_ubx_x+self._nlp_ubx_u+self._nlp_ubx_t),
+                lbg=(self._nlp_lbg_dyn+self._nlp_lbg_wp_p),
+                ubg=(self._nlp_ubg_dyn+self._nlp_ubg_wp_p),
+                p=p
+            )
         self._xut0 = res['x'].full().flatten()
         self._lam_x0 = res["lam_x"]
         self._lam_g0 = res["lam_g"]
@@ -292,9 +317,9 @@ def cal_Ns(gates:Gates, l_per_n:float, loop:bool, init_pos=[0,0,0]):
 def optimation(nx, quad):
     gate = Gates(BASEPATH+"gates/gates_"+nx+".yaml")
 
-    dts = np.array([0.2]*gate._N)
+    dts = np.array([0.3]*gate._N)
     
-    Ns = cal_Ns(gate, 0.4, loop=True)
+    Ns = cal_Ns(gate, 0.3, loop=True)
     wp_opt = WayPointOpt(quad, gate._N, Ns, loop=True)
     wp_opt.define_opt()
     wp_opt.define_opt_t()
@@ -309,4 +334,4 @@ def optimation(nx, quad):
 if __name__ == "__main__":    
     quad = QuadrotorModel(BASEPATH+'quad/quad_real.yaml')
     
-    optimation("real", quad)
+    optimation("n8", quad)

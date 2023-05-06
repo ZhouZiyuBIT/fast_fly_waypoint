@@ -31,7 +31,7 @@ class Gates():
 
     def add_shape(self, pos, rot):
         angles = np.linspace(0, 2*np.pi, 50)
-        R = 0.5
+        R = 0.35
         x = R*np.cos(angles)*np.cos(rot*np.pi/180)
         y = R*np.cos(angles)*np.sin(rot*np.pi/180)
         z = R*np.sin(angles)
